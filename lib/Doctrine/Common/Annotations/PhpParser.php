@@ -20,15 +20,46 @@
 namespace Doctrine\Common\Annotations;
 
 use SplFileObject;
+use ReflectionFunctionAbstract;
 
 /**
  * Parses a file for namespaces/use/class declarations.
  *
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Christian Kaps <christian.kaps@mohiva.com>
+ * @author André Rothe <andre.rothe@phosco.info>
  */
 final class PhpParser
 {
+    public function getParameters(ReflectionFunctionAbstract $func) {
+        if ($func->getNumberOfParameters() === 0) {
+                return $this->getReflectionParameters($func, []);
+        }
+
+        if (false === $filename = $func->getFileName()) {
+            return $this->getReflectionParameters($func, []);
+        }
+
+        $content = $this->getFileContent($filename, $func->getStartLine(), $func->getEndLine());
+        if (null === $content) {
+            return $this->getReflectionParameters($func, []);
+        }
+
+        $tokenizer = new TokenParser("<?php " . $content);
+        $comments = $tokenizer->parseParameterComment($func);
+        return $this->getReflectionParameters($func, $comments);
+    }
+
+    private function getReflectionParameters(ReflectionFunctionAbstract $reflectionFunction, $docComments) {
+
+        $res = array();
+        foreach($reflectionFunction->getParameters() as $param) {
+                $comment = array_key_exists($param->getName(), $docComments) ? $docComments[$param->getName()] : "";
+                $res[] = new ReflectionParameter($param, $comment);
+        }
+        return $res;
+    }
+
     /**
      * Parses a class.
      *
@@ -46,7 +77,7 @@ final class PhpParser
             return [];
         }
 
-        $content = $this->getFileContent($filename, $class->getStartLine());
+        $content = $this->getFileContent($filename, 0, $class->getStartLine());
 
         if (null === $content) {
             return [];
@@ -64,28 +95,36 @@ final class PhpParser
     /**
      * Gets the content of the file right up to the given line number.
      *
-     * @param string  $filename   The name of the file to load.
-     * @param integer $lineNumber The number of lines to read from file.
+     * @param string  $filename        The name of the file to load.
+     * @param integer $startLineNumber The line-number to start reading from file.
+     * @param integer $endLineNumber   The line-number to stop reading from file.
      *
      * @return string|null The content of the file or null if the file does not exist.
      */
-    private function getFileContent($filename, $lineNumber)
-    {
-        if ( ! is_file($filename)) {
+    private function getFileContent($filename, $startLineNumber, $endLineNumber) {
+        if (!is_file($filename)) {
             return null;
         }
 
         $content = '';
         $lineCnt = 0;
-        $file = new SplFileObject($filename);
+
+        $file = new \SplFileObject($filename);
         while (!$file->eof()) {
-            if ($lineCnt++ == $lineNumber) {
-                break;
-            }
+                $line = $file->fgets();
+                $lineCnt++;
 
-            $content .= $file->fgets();
+                if ($lineCnt < $startLineNumber) {
+                        continue;
+                }
+
+                $content .= $line;
+
+                if ($lineCnt === $endLineNumber) {
+                        break;
+                }
         }
-
         return $content;
-    }
+   }
+
 }

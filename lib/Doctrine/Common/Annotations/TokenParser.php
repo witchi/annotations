@@ -191,4 +191,91 @@ class TokenParser
         // both.
         return $this->parseNamespace();
     }
+
+        /**
+        * Get the DocComment for the given 
+        * it must be in front of the parameter name
+        * so you have things like this:
+        * T_FUNCTION T_STRING ( T_DOC_COMMENT T_VARIABLE , T_DOC_COMMENT T_VARIABLE ) {
+        */
+        public function parseParameterComment() {
+
+                $isArray = 0;
+                $comment = null;
+                $expected = array();
+                $res = array();
+
+                while (($token = $this->next(false))) {
+
+                        if (!is_array($token)) {
+                                $token = array($token, $token);
+                        }
+
+                        if (sizeof($expected) == 0) {
+                                if ($token[0] === T_FUNCTION) {
+                                        $expected[] = T_STRING;
+                                }
+                                continue;
+                        }
+
+                        $expected = array_flip($expected);
+                        if (!array_key_exists($token[0], $expected)) {
+                                break;
+                        }
+
+                        $expected = array();
+                        if ($token[0] === T_STRING) {
+                                $expected[] = "(";
+
+                        } else if ($token[0] === "(") {
+                                $expected = ($isArray === 0) ? array(T_DOC_COMMENT, T_VARIABLE) : array(T_LNUMBER, T_CONSTANT_ENCAPSED_STRING);
+
+                        } else if ($token[0] === T_DOC_COMMENT) {
+                                $expected[] = T_VARIABLE;
+                                $comment = $token[1];
+
+                        } else if ($token[0] === T_VARIABLE) {
+                                $res[ltrim($token[1], "$")] = $comment;
+                                $comment = null;
+                                $expected = array("," , ")", "=");
+
+                        } else if ($token[0] === ",") {
+                                $expected = array(T_DOC_COMMENT, T_VARIABLE, T_CONSTANT_ENCAPSED_STRING, T_LNUMBER, T_ARRAY, T_DNUMBER);
+
+                        } else if ($token[0] === T_ARRAY) {
+                                $isArray++;
+                                $expected[] = "(";
+
+                        } else if ($token[0] === "=") {
+                                $expected = array(T_LNUMBER, T_ARRAY, T_DNUMBER, T_CONSTANT_ENCAPSED_STRING);
+
+                        } else if ($token[0] === ")") {
+                                if ($isArray === 0) {
+                                        break;
+                                }
+                                $isArray--;
+                                $expected = array(")", ",");
+
+                        } else if ($token[0] ===  T_CONSTANT_ENCAPSED_STRING) {
+                                $expected = array(")", ",", T_DOUBLE_ARROW);
+
+                        } else if ($token[0] === T_LNUMBER) {
+                                $expected = array(")", ",", T_DOUBLE_ARROW);
+
+                         } else if ($token[0] === T_DOUBLE_ARROW) {
+                                if ($isArray === 0) {
+                                        break;
+                                }
+                                $expected = array(T_LNUMBER, T_ARRAY, T_DNUMBER, T_CONSTANT_ENCAPSED_STRING);
+
+                        } else if ($token[0] === T_DNUMBER) {
+                                $expected = array(")", ",");
+
+                        } else {
+                                break;
+                        }
+                }
+                return $res;
+        }
+
 }
