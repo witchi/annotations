@@ -68,6 +68,16 @@ interface Reader
     function getMethodAnnotation(\ReflectionMethod $method, $annotationName);
 
     /**
+     * Gets the annotations applied to a method parameter.
+     *
+     * @param ReflectionParameter $parameter The ReflectionParameter of the method parameter from which
+     *                                  the annotations should be read.
+     *
+     * @return array An array of Annotations.
+     */
+    function getMethodAnnotations(\ReflectionMethod $method);
+
+    /**
      * Gets the annotations applied to a property.
      *
      * @param \ReflectionProperty $property The ReflectionProperty of the property
