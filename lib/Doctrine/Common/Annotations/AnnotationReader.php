@@ -287,6 +287,22 @@ class AnnotationReader implements Reader
     /**
      * {@inheritDoc}
      */
+    public function getParameterAnnotations(ReflectionParameter $parameter) {
+        $class = $parameter->getDeclaringClass();
+        $method = $parameter->getDeclaringFunction();
+        $context = 'parameter ' . $class->getName() . "::" . $method . "(" . $parameter->getName() . ")";
+	
+        $this->parser->setTarget(Target::TARGET_PARAMETER);
+        $this->parser->setImports($this->getMethodImports($method));
+        $this->parser->setIgnoredAnnotationNames($this->getIgnoredAnnotationNames($class));
+        $this->parser->setIgnoredAnnotationNamespaces(self::$globalIgnoredNamespaces);
+
+        return $this->parser->parse($parameter->getDocComment(), $context);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public function getMethodAnnotation(ReflectionMethod $method, $annotationName)
     {
         $annotations = $this->getMethodAnnotations($method);
