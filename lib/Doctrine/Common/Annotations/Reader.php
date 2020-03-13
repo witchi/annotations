@@ -75,7 +75,7 @@ interface Reader
      *
      * @return array An array of Annotations.
      */
-    function getParameterAnnotations(\ReflectionParameter $parameter);
+    function getParameterAnnotations(ReflectionParameter $parameter);
 
     /**
      * Gets the annotations applied to a property.
