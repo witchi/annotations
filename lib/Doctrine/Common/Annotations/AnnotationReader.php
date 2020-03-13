@@ -33,6 +33,7 @@ use ReflectionProperty;
  * @author  Jonathan Wage <jonwage@gmail.com>
  * @author  Roman Borschel <roman@code-factory.org>
  * @author  Johannes M. Schmitt <schmittjoh@gmail.com>
+ * @author  André Rothe <andre.rothe@phosco.info>
  */
 class AnnotationReader implements Reader
 {

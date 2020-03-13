@@ -24,6 +24,7 @@ namespace Doctrine\Common\Annotations;
  *
  * @author Fabien Potencier <fabien@symfony.com>
  * @author Christian Kaps <christian.kaps@mohiva.com>
+ * @author André Rothe <andre.rothe@phosco.info>
  */
 class TokenParser
 {
